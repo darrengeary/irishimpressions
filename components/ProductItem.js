@@ -18,23 +18,18 @@ export default function ProductItem({ product }) {
           />
         </a>
       </Link>
-      <div className='flex flex-col items-center my-8 pt-5 justify-center'>
+      <div className='flex flex-col items-center mb-4 mt-2 pt-5 justify-center'>
         <Link href={`/product/${product.slug}`}>
           <a>
             <h1 className='green hover-purple text-medium'>{product.name}</h1>
           </a>
         </Link>
         <h2 className='py-1 text-lg'>{product.english}</h2>
-        <h3 className='italic mb-8'>
+        <h3 className='italic mb-4'>
           from €{round2(product.yearPrice)} per Month
         </h3>
-        <Link href={`/product/${product.slug}`}>
-          <button className='primary-button mb-6' type='button'>
-            More Info
-          </button>
-        </Link>
         <Link href={`/product/${product.slug}#peek`}>
-          <a className='mb-6 purple'>
+          <a className='purple mb-4'>
             Peek inside
             {" " +
               new Date(

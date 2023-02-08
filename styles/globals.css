@@ -1088,3 +1088,14 @@ h3 {
 .ok {
   max-height: 3rem;
 }
+
+.text-white {
+  color: white;
+}
+.text-white a {
+  color: white;
+}
+
+.toast-pos {
+  top: 6rem !important;
+}

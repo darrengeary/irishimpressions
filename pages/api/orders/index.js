@@ -52,7 +52,6 @@ const handler = async (req, res) => {
 
   await db.connect()
   const item = await Product.findOne({ name: reqBody.orderItems.name })
-  await db.disconnect()
 
   let itemsPrice
   switch (reqBody.paymentMethod) {
@@ -83,7 +82,7 @@ const handler = async (req, res) => {
   })
 
   const order = await newOrder.save()
-  await db.disconnect()
+
   res.status(201).send(order)
 }
 

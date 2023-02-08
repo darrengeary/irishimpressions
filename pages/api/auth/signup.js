@@ -67,13 +67,11 @@ async function handler(req, res) {
   }
 
   await db.connect()
-
   const existingUser = await User.findOne({ email: email })
   if (existingUser) {
     res
       .status(422)
       .json({ message: "There is already an account with this email" })
-    await db.disconnect()
     return
   }
 
@@ -86,7 +84,7 @@ async function handler(req, res) {
   })
 
   const user = await newUser.save()
-  await db.disconnect()
+
   res.status(201).send({
     message: "Created User!",
     _id: user._id,

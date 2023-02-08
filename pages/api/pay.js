@@ -17,10 +17,9 @@ const postHandler = async (req, res) => {
     order.isPaid = true
     order.paidAt = Date.now()
     const paidOrder = await order.save()
-    await db.disconnect()
+
     res.send({ message: "Order Paid Successfully", order: paidOrder })
   } else {
-    await db.disconnect()
     res.status(404).send({ message: "Error: Order Not Found" })
   }
 }

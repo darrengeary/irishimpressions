@@ -81,8 +81,10 @@ export default function PlaceOrderScreen() {
   const router = useRouter()
 
   useEffect(() => {
+    console.log(cartItems)
+    console.log(paymentMethod)
     if (!paymentMethod || !cartItems.product) {
-      router.push("/boxes")
+      router.push("/order-history")
       toast.error("Cart Reset: Check Order History")
     } else {
       const finalPrice1 = finalPriceCalc()

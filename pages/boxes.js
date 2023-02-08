@@ -1,61 +1,52 @@
 import Layout from "../components/Layout"
 import NavBar from "../components/NavBar"
 import ProductItem from "../components/ProductItem"
-import Product from "../models/Product"
-import db from "../utils/db"
+import React, { useReducer, useEffect } from "react"
+import { getError } from "../utils/error"
+import axios from "axios"
 
-const PAGE_SIZE = 2
+function reducer(state, action) {
+  switch (action.type) {
+    case "FETCH_REQUEST":
+      return { ...state, loading: true, error: "" }
+    case "FETCH_SUCCESS":
+      return { ...state, loading: false, products: action.payload, error: "" }
+    case "FETCH_FAIL":
+      return { ...state, loading: false, error: action.payload }
+    default:
+      return state
+  }
+}
+export default function Search() {
+  const [{ products }, dispatch] = useReducer(reducer, {
+    loading: true,
+    orders: [],
+    error: "",
+  })
 
-export default function Search(props) {
-  const { products } = props
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        dispatch({ type: "FETCH_REQUEST" })
+        const { data } = await axios.get(`/api/products`)
+        dispatch({ type: "FETCH_SUCCESS", payload: data })
+      } catch (err) {
+        dispatch({ type: "FETCH_FAIL", payload: getError(err) })
+      }
+    }
+    fetchOrders()
+  }, [])
 
   return (
     <>
       <NavBar />
-      <Layout title='search'>
+      <Layout title='All Boxes'>
         <div className='md:grid md:gap-4 lg:gap-12 md:mx-8 my-12 md:grid-cols-2'>
-          {products.map((product) => (
+          {products?.map((product) => (
             <ProductItem key={product._id} product={product} />
           ))}
         </div>
       </Layout>
     </>
   )
-}
-
-export async function getServerSideProps({ query }) {
-  const pageSize = query.pageSize || PAGE_SIZE
-  const page = query.page || 1
-  const searchQuery = query.query || ""
-
-  const queryFilter =
-    searchQuery && searchQuery !== "all"
-      ? {
-          name: {
-            $regex: searchQuery,
-            $options: "i",
-          },
-        }
-      : {}
-  await db.connect()
-
-  const productDocs = await Product.find({
-    ...queryFilter,
-  }).lean()
-
-  const countProducts = await Product.countDocuments({
-    ...queryFilter,
-  })
-
-  await db.disconnect()
-  const products = productDocs.map(db.convertDocToObj)
-
-  return {
-    props: {
-      products,
-      countProducts,
-      page,
-      pages: Math.ceil(countProducts / pageSize),
-    },
-  }
 }

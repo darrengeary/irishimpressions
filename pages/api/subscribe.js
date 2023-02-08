@@ -19,7 +19,7 @@ export default async function handler(req, res) {
 
   await db.connect()
   const order = await Order.findById(orderId)
-  await db.disconnect()
+
   try {
     // Create a customer
     const customer = await stripe.customers.create({

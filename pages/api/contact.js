@@ -21,7 +21,7 @@ const postHandler = async (req, res) => {
         newMessage.user = session.user._id
       }
       const savedMessage = await newMessage.save()
-      await db.disconnect()
+
       res.send({ message: "Message Sent", savedMessage })
     }
   } catch (error) {

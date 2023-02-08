@@ -13,13 +13,12 @@ const handler = async (req, res) => {
     order.isDelivered = true
     order.deliveredAt = Date.now()
     const deliveredOrder = await order.save()
-    await db.disconnect()
+
     res.send({
       message: "Order Delivered Successfully",
       order: deliveredOrder,
     })
   } else {
-    await db.disconnect()
     res.status(404).send({ message: "Error: Order Not Found" })
   }
 }

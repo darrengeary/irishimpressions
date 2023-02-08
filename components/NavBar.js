@@ -102,6 +102,16 @@ export default function Navbar({ alwaysVisible = true }) {
       window.removeEventListener("click", handleClick)
     }
   }, [open])
+
+  useEffect(() => {
+    setMenuOpen(false)
+    links.forEach((link) => {
+      if (router.asPath === link.path) {
+        setActiveLink(link.path)
+      }
+    })
+  }, [])
+
   return (
     <header ref={menuRef}>
       <CookiePrompt />

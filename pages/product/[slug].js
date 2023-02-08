@@ -1,45 +1,86 @@
-import Image from "next/image"
-import Link from "next/link"
-import { useRouter } from "next/router"
-import React, { useContext, useState, useEffect } from "react"
-import { toast } from "react-toastify"
 import Layout from "../../components/Layout"
 import NavBar from "../../components/NavBar"
-import Product from "../../models/Product"
-import db from "../../utils/db"
+import "react-responsive-carousel/lib/styles/carousel.min.css"
+import Link from "next/link"
+import React, { useReducer, useEffect, useContext, useState } from "react"
+import { getError } from "../../utils/error"
+import axios from "axios"
+import Image from "next/image"
+import { useRouter } from "next/router"
+import { toast } from "react-toastify"
 import { Store } from "../../utils/Store"
 import { ArrowRightIcon, ArrowUpIcon } from "@heroicons/react/outline"
 import Cookies from "js-cookie"
 
-function useWindowDimensions() {
-  const [dimensions, setDimensions] = useState({
-    width: undefined,
-    height: undefined,
+function reducer(state, action) {
+  switch (action.type) {
+    case "FETCH_REQUEST":
+      return { ...state, loading: true, error: "" }
+    case "FETCH_SUCCESS":
+      return { ...state, loading: false, product: action.payload, error: "" }
+    case "FETCH_FAIL":
+      return { ...state, loading: false, error: action.payload }
+    default:
+      return state
+  }
+}
+
+export default function ProductScreen() {
+  const router = useRouter()
+  const productSlug = router.query.slug
+  const { state, dispatch } = useContext(Store)
+  const [{ loading, error, product }, productDispatch] = useReducer(reducer, {
+    loading: true,
+    orders: [],
+    error: "",
   })
 
   useEffect(() => {
-    function handleResize() {
-      setDimensions({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      })
+    const fetchOrders = async () => {
+      try {
+        productDispatch({ type: "FETCH_REQUEST" })
+        const { data } = await axios.get(`/api/products`)
+        const thisProduct = data.find((p) => p.slug == productSlug)
+
+        productSlug == "meanach"
+          ? setContents(meanachContent)
+          : setContents(morContent)
+        productDispatch({ type: "FETCH_SUCCESS", payload: thisProduct })
+      } catch (err) {
+        productDispatch({ type: "FETCH_FAIL", payload: getError(err) })
+      }
     }
+    fetchOrders()
+  }, [router.query.slug])
 
-    window.addEventListener("resize", handleResize)
+  function useWindowDimensions() {
+    const [dimensions, setDimensions] = useState({
+      width: undefined,
+      height: undefined,
+    })
 
-    handleResize()
+    useEffect(() => {
+      function handleResize() {
+        setDimensions({
+          width: window.innerWidth,
+          height: window.innerHeight,
+        })
+      }
 
-    return () => window.removeEventListener("resize", handleResize)
-  }, [])
+      window.addEventListener("resize", handleResize)
 
-  return dimensions
-}
+      handleResize()
 
-const handleTop = () => {
-  window.scrollTo({ top: 0, behavior: "smooth" })
-}
+      return () => window.removeEventListener("resize", handleResize)
+    }, [])
 
-export default function ProductScreen(props) {
+    return dimensions
+  }
+
+  const handleTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
   const round2 = (num) =>
     num % 1 == 0
       ? Math.round(num * 100 + Number.EPSILON) / 100
@@ -114,35 +155,18 @@ export default function ProductScreen(props) {
     {
       key: 6,
       name: "Irish Sheep Dog Art",
-      image: "/images/dog.png",
+      image: "/images/dog.jpg",
       description:
         "Bring a touch of Ireland's beauty into your home with these stunning prints by artist Jane Dunn, a talented artist from Co. Mayo. Inspired by her visits to Lunasa, each image showcases the unique beauty and charm of the local area. With Jane's studio offering breathtaking views of a river valley in North Mayo, these cards are a testament to her passion and artistic prowess.",
     },
   ]
 
-  const { product } = props
-  const { state, dispatch } = useContext(Store)
-  const router = useRouter()
   const { width } = useWindowDimensions()
 
   const { cart } = state
   const [isSelected, setSelected] = useState("3 Month Subscription")
   const [contents, setContents] = useState([])
 
-  useEffect(() => {
-    product.name.substring(10, 13) === "ach"
-      ? setContents(meanachContent)
-      : setContents(morContent)
-  }, [product])
-
-  if (!product) {
-    return (
-      <>
-        <NavBar />
-        <Layout title='Product Not Found'>Product Not Found</Layout>;
-      </>
-    )
-  }
   const addToCartHandler = async () => {
     if (isSelected) {
       dispatch({ type: "SAVE_PAYMENT_METHOD", payload: isSelected })
@@ -153,6 +177,7 @@ export default function ProductScreen(props) {
           paymentMethod: isSelected,
         })
       )
+      console.log(product)
       dispatch({ type: "CART_ADD_ITEM", payload: { product } })
       router.push("/register?redirect=/shipping")
     } else {
@@ -163,7 +188,7 @@ export default function ProductScreen(props) {
   return (
     <>
       <NavBar />
-      <Layout noContainer={false} title={product.name}>
+      <Layout noContainer={false} title={product?.name}>
         <div className='lg-container mx-auto'>
           <h3 className='py-2'>
             <Link href='/' className='purple'>
@@ -172,80 +197,87 @@ export default function ProductScreen(props) {
           </h3>
           <div className='lg:grid grid-cols-2 gap-8'>
             <div className='col-span-1'>
-              <div>
-                <h1 className='main-text green'>{product.name}</h1>
-                <h2 className='mb-2'>{product.english}</h2>
-                <div className='grid grid-cols-2 p-1 py-4 gap-1 text-left bg-white rounded-lg shadow'>
-                  <div
-                    className={`mb-4 py-8 bux items-center ${
-                      isSelected === "Single Month Trial" ? "selected-sub" : ""
-                    }`}
-                    onClick={() => setSelected("Single Month Trial")}
-                  >
-                    <h3>Single Month Trial</h3>
-                    <div className='font-medium flex text-green-500'>
-                      <div className='euro'>€</div>
-                      {round2(product.monthPrice)} per box
+              {error && toast.error("Error:" + error)}
+              {!loading ? (
+                <div>
+                  <h1 className='main-text green'>{product.name}</h1>
+                  <h2 className='mb-2'>{product.english}</h2>
+                  <div className='grid grid-cols-2 p-1 py-4 gap-1 text-left bg-white rounded-lg shadow'>
+                    <div
+                      className={`mb-4 py-8 bux items-center ${
+                        isSelected === "Single Month Trial"
+                          ? "selected-sub"
+                          : ""
+                      }`}
+                      onClick={() => setSelected("Single Month Trial")}
+                    >
+                      <h3>Single Month Trial</h3>
+                      <div className='font-medium flex text-green-500'>
+                        <div className='euro'>€</div>
+                        {round2(product.monthPrice)} per box
+                      </div>
                     </div>
-                  </div>
-                  <div
-                    className={`mb-4 py-8 relative bux items-center ${
-                      isSelected === "3 Month Subscription"
-                        ? "selected-sub"
-                        : ""
-                    }`}
-                    onClick={() => setSelected("3 Month Subscription")}
-                  >
-                    <h3>3 Month Subscription</h3>
-                    <div className='py-1 px-2 offer-popular absolute rounded-full text-white'>
-                      Most Popular
+                    <div
+                      className={`mb-4 py-8 relative bux items-center ${
+                        isSelected === "3 Month Subscription"
+                          ? "selected-sub"
+                          : ""
+                      }`}
+                      onClick={() => setSelected("3 Month Subscription")}
+                    >
+                      <h3>3 Month Subscription</h3>
+                      <div className='py-1 px-2 offer-popular absolute rounded-full text-white'>
+                        Most Popular
+                      </div>
+                      <div className='font-medium flex text-green-500'>
+                        <div className='euro'>€</div>
+                        {round2(product.threeMonthPrice)} per box
+                      </div>
                     </div>
-                    <div className='font-medium flex text-green-500'>
-                      <div className='euro'>€</div>
-                      {round2(product.threeMonthPrice)} per box
-                    </div>
-                  </div>
-                  <div
-                    className={`mb-4 py-8 bux items-center ${
-                      isSelected === "6 Month Subscription"
-                        ? "selected-sub"
-                        : ""
-                    }`}
-                    onClick={() => setSelected("6 Month Subscription")}
-                  >
-                    <h3>6 Month Subscription</h3>
+                    <div
+                      className={`mb-4 py-8 bux items-center ${
+                        isSelected === "6 Month Subscription"
+                          ? "selected-sub"
+                          : ""
+                      }`}
+                      onClick={() => setSelected("6 Month Subscription")}
+                    >
+                      <h3>6 Month Subscription</h3>
 
-                    <div className='font-medium flex text-green-500'>
-                      <div className='euro'>€</div>
-                      {round2(product.sixMonthPrice)} per box
+                      <div className='font-medium flex text-green-500'>
+                        <div className='euro'>€</div>
+                        {round2(product.sixMonthPrice)} per box
+                      </div>
                     </div>
-                  </div>
-                  <div
-                    className={`mb-4 relative bux py-8 items-center ${
-                      isSelected === "12 Month Subscription"
-                        ? "selected-sub"
-                        : ""
-                    }`}
-                    onClick={() => setSelected("12 Month Subscription")}
-                  >
-                    <h3>12 Month Subscription</h3>
-                    <span className='py-1 px-2 offer-best pink-bg rounded-full text-white'>
-                      Best Value
-                    </span>
-                    <div className='font-medium flex text-green-500'>
-                      <div className='euro'>€</div>
-                      {round2(product.yearPrice)} per box
+                    <div
+                      className={`mb-4 relative bux py-8 items-center ${
+                        isSelected === "12 Month Subscription"
+                          ? "selected-sub"
+                          : ""
+                      }`}
+                      onClick={() => setSelected("12 Month Subscription")}
+                    >
+                      <h3>12 Month Subscription</h3>
+                      <span className='py-1 px-2 offer-best pink-bg rounded-full text-white'>
+                        Best Value
+                      </span>
+                      <div className='font-medium flex text-green-500'>
+                        <div className='euro'>€</div>
+                        {round2(product.yearPrice)} per box
+                      </div>
                     </div>
-                  </div>
-                  <div
-                    onClick={addToCartHandler}
-                    className='col-span-2 checkout-button pointer flex primary-button'
-                  >
-                    Proceed to Checkout &nbsp;&nbsp;
-                    <ArrowRightIcon className='arrow'></ArrowRightIcon>
+                    <div
+                      onClick={addToCartHandler}
+                      className='col-span-2 checkout-button pointer flex primary-button'
+                    >
+                      Proceed to Checkout &nbsp;&nbsp;
+                      <ArrowRightIcon className='arrow'></ArrowRightIcon>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div>Loading...</div>
+              )}
             </div>
 
             <div className='md:mt-0 mt-12 mb-12'>
@@ -254,7 +286,7 @@ export default function ProductScreen(props) {
                   <h1 className='text-lg  my-5'>Description:</h1>
                 </li>
                 <li>
-                  {product.description.split("\n").map((e, index) => (
+                  {product?.description.split("\n").map((e, index) => (
                     <p key={index + 1000} className='my-3'>
                       {e}
                     </p>
@@ -266,62 +298,77 @@ export default function ProductScreen(props) {
           <div id='peek'></div>
           <h1 id='peek' className='my-12 mb-6 text-center text-xl'>
             Peek Inside Last Months Box
-          </h1>
-          {width < 768
-            ? contents.map((product, index) => (
-                <>
-                  <div key={index} className='grid md:grid-cols-2 md:gap-12'>
-                    <div>
-                      <Image
-                        src={product.image}
-                        alt={product.name}
-                        width={20}
-                        height={10}
-                        className='content-image'
-                        layout='responsive'
-                      ></Image>
-                    </div>
-                    <div className='content-info'>
-                      <div>
-                        <h1 className='text-lg'>{product.name}</h1>
-                        <h2>{product.description}</h2>
-                      </div>
-                    </div>
-                  </div>
-                  <hr className='my-12'></hr>
-                </>
-              ))
-            : contents.map((product, index) => (
-                <div key={index}>
-                  <div key={index} className='grid md:grid-cols-2 md:gap-24'>
-                    <div className={index % 2 === 0 ? "order-2" : "order-1"}>
-                      <Image
-                        src={product.image}
-                        alt={product.name}
-                        width={20}
-                        height={10}
-                        className='content-image'
-                        layout='responsive'
+          </h1>{" "}
+          {error && toast.error("Error:" + error)}
+          {!loading ? (
+            <div>
+              {width < 768
+                ? contents.map((product, index) => (
+                    <>
+                      <div
                         key={index}
-                      ></Image>
-                    </div>
-                    <div
-                      className={
-                        index % 2 === 0
-                          ? "order-1 content-info"
-                          : "order-2 content-info"
-                      }
-                      key={index}
-                    >
-                      <div key={index}>
-                        <h1 className='text-lg'>{product.name}</h1>
-                        <h2>{product.description}</h2>
+                        className='grid md:grid-cols-2 md:gap-12'
+                      >
+                        <div>
+                          <Image
+                            src={product.image}
+                            alt={product.name}
+                            width={20}
+                            height={10}
+                            className='content-image'
+                            layout='responsive'
+                          ></Image>
+                        </div>
+                        <div className='content-info'>
+                          <div>
+                            <h1 className='text-lg'>{product.name}</h1>
+                            <h2>{product.description}</h2>
+                          </div>
+                        </div>
                       </div>
+                      <hr className='my-12'></hr>
+                    </>
+                  ))
+                : contents.map((product, index) => (
+                    <div key={index}>
+                      <div
+                        key={index}
+                        className='grid md:grid-cols-2 md:gap-24'
+                      >
+                        <div
+                          className={index % 2 === 0 ? "order-2" : "order-1"}
+                        >
+                          <Image
+                            src={product.image}
+                            alt={product.name}
+                            width={20}
+                            height={10}
+                            className='content-image'
+                            layout='responsive'
+                            key={index}
+                          ></Image>
+                        </div>
+                        <div
+                          className={
+                            index % 2 === 0
+                              ? "order-1 content-info"
+                              : "order-2 content-info"
+                          }
+                          key={index}
+                        >
+                          <div key={index}>
+                            <h1 className='text-lg'>{product.name}</h1>
+                            <h2>{product.description}</h2>
+                          </div>
+                        </div>
+                      </div>
+                      <hr className='my-12'></hr>
                     </div>
-                  </div>
-                  <hr className='my-12'></hr>
-                </div>
-              ))}
+                  ))}
+            </div>
+          ) : (
+            <div>Loading...</div>
+          )}
         </div>
         <div
           className='flex justify-center my-12 purple pointer '
@@ -331,21 +378,7 @@ export default function ProductScreen(props) {
           <br></br>
           <h3 className='p-0 ml-3'>Show Subscriptions</h3>
         </div>
-      </Layout>
+      </Layout>{" "}
     </>
   )
-}
-
-export async function getServerSideProps(context) {
-  const { params } = context
-  const { slug } = params
-
-  await db.connect()
-  const product = await Product.findOne({ slug }).lean()
-  await db.disconnect()
-  return {
-    props: {
-      product: product ? db.convertDocToObj(product) : null,
-    },
-  }
 }

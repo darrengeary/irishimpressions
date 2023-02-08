@@ -75,10 +75,12 @@ function OrderHistoryScreen() {
                           )}
                         </td>
                         <td className=' p-5 '>
-                          {order.paymentMethod.substring(
-                            0,
-                            order.paymentMethod.length - 13
-                          ) + "'s"}
+                          {order.paymentMethod != "Single Month Trial"
+                            ? order.paymentMethod.substring(
+                                0,
+                                order.paymentMethod.length - 13
+                              ) + "'s"
+                            : order.paymentMethod}
                         </td>
                         <td className=' p-5 '>€{order.itemsPrice} / month</td>
                         <td className=' p-5 '>

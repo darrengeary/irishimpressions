@@ -8,10 +8,9 @@ const handler = async (req, res) => {
   if (!session) {
     return res.status(401).send("Signin Required")
   }
-  console.log(req.query.id)
   await db.connect()
   const order = await Order.findById(mongoose.Types.ObjectId(req.query.id))
-  await db.disconnect()
+
   res.send(order)
 }
 

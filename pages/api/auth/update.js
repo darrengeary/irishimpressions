@@ -77,7 +77,7 @@ async function handler(req, res) {
   }
   await db.connect()
   const existingUser = await User.find({ email: email })
-  await db.disconnect()
+
   if (
     (session.user.email === email && existingUser.length > 1) ||
     (session.user.email != email && existingUser.length > 0)
@@ -97,12 +97,11 @@ async function handler(req, res) {
       toUpdateUser.password = bcryptjs.hashSync(newPassword)
     }
     await toUpdateUser.save()
-    await db.disconnect()
+
     res.send({
       message: "User Successfully Updated",
     })
   } else {
-    await db.disconnect()
     res.status(422).json({ message: "Incorrect Password" })
     return
   }

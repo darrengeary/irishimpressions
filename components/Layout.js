@@ -15,7 +15,12 @@ export default function Layout({ title, noContainer, children }) {
         <link rel='icon' href='/favicon.ico' />
       </Head>
 
-      <ToastContainer position='bottom-center' limit={1} />
+      <ToastContainer
+        position='top-center'
+        className='toast-pos'
+        hideProgressBar={false}
+        limit={4}
+      />
       <div className='top-main flex min-h-screen flex-col justify-between '>
         <main className={noContainer ? "" : "container mx-auto"}>
           {children}

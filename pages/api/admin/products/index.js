@@ -32,13 +32,13 @@ const postHandler = async (req, res) => {
   })
 
   const product = await newProduct.save()
-  await db.disconnect()
+
   res.send({ message: "Product Created Successfully", product })
 }
 const getHandler = async (req, res) => {
   await db.connect()
   const products = await Product.find({})
-  await db.disconnect()
+
   res.send(products)
 }
 export default handler
