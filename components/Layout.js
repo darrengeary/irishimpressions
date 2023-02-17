@@ -9,9 +9,15 @@ export default function Layout({ title, noContainer, children }) {
     <>
       <Head>
         <title>
-          {title ? title + " - Irish Impressions" : "Irish Impressions"}
+          {title
+            ? title +
+              " - Irish Impressions - Hand-made Artisan Subscription Box"
+            : "Irish Impressions - Hand-made Artisan Subscription Box"}
         </title>
-        <meta name='description' content='Ecommerce Website' />
+        <meta
+          name='description'
+          content='Discover the best of Irish artisan products with our monthly subscription boxes. Handcrafted goods from local Irish makers delivered to your door. Subscribe now!'
+        />
         <link rel='icon' href='/favicon.ico' />
       </Head>
 
